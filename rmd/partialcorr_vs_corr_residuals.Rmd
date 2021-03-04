@@ -1,0 +1,74 @@
+---
+title: "Partial correlation p value"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview
+**Partial correlation** is the correlation between X and Y after partialling out the effect of Z(s). Partialling out is sometimes described as "controlling for", "regressing out", "adjusting for", "accounting for", etc. 
+
+This value can be computed as the correlation between the residuals of X after regressing onto Z, and the residuals of Y after regressing onto Z. 
+
+
+# Issue
+Simply running `cor(x.resid, y.resid)`, p-value is slightly different than the p-value from partial correlation functions such as `ppcor::pcor.test`j, albeit only slightly.
+
+## Here is an example:
+
+Load data `mtcars`
+```{r data}
+df <- mtcars
+```
+
+
+Calculate partial correlation using `pcor.test` between `mpg` and `cyl`, partialling out `hp`
+
+```{r}
+prr <- ppcor::pcor.test(x = df$mpg, y = df$cyl, z = df$hp)
+```
+
+partial r = `r prr$estimate`, p = `r prr$p.value`
+
+Lets compare the above to using `cor()` with the residuals of `mpg` and `cyl` after partialling out `hp`
+
+```{r}
+# Getting `residuals` from `lm()`
+x.resid <- resid(lm(mpg ~ hp, data=df))
+y.resid <- resid(lm(cyl ~ hp, data=df))
+
+rr <- cor.test(x.resid, y.resid)
+```
+
+partial r = `r rr$estimate`, p = `r rr$p.value`
+
+**While the r values from both methods are the same, but the p-value is slightly different. WHY?**
+
+# Reasons
+
+The degree of freedom(df) in a simple correlation is `n-2`.
+
+However, the df in partial correlation is `n-2-g`, where `g` is the number of variables being partialled out. 
+
+In the above example, only `hp` was partialled out, therefore `g=1`. Because `cor()` assumes the df of 2, the p-value is incorrect (albeit only slightly in this case; however, this can become more problematic as more variables are partialled out [i.e., greater `g`]). 
+
+# Sanity Check - Manually calculate p-value with correct df
+
+```{r}
+par.r <- as.numeric(rr$estimate)
+n <- nrow(df)
+g <- 1
+degf <- n-2-g
+
+tstats <- par.r*sqrt((degf)/(1-par.r^2))
+pv <- 2*pt(abs(tstats), degf, lower.tail = F)
+```
+
+Manually calculate the p-value using the correct df (`r degf`) yield a p-value of `r pv`, the same as the output from `pcor.test`.
+
+```{r}
+prr$p.value==pv
+```
+
