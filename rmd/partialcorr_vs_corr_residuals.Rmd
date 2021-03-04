@@ -68,7 +68,4 @@ pv <- 2*pt(abs(tstats), degf, lower.tail = F)
 
 Manually calculate the p-value using the correct df (`r degf`) yield a p-value of `r pv`, the same as the output from `pcor.test`.
 
-```{r}
-prr$p.value==pv
-```
 
