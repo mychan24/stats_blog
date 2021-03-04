@@ -6,7 +6,7 @@ r_packages:
   - ppcor
 
 script:
-  - Rscript -e 'rmarkdown::render("rmd/partialcorr_vs_corr_residuals.Rmd", output_format = "html_document", output_dir = "docs")'
+  - Rscript -e 'rmarkdown::render("rmd/partialcorr_vs_corr_residuals.Rmd", output_format = "html_document", output_dir = "docs", output_file = "index.html")'
 
 deploy:
   provider: pages                  # Specify the gh-pages deployment method
